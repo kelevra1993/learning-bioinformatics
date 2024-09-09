@@ -6,19 +6,19 @@ Repository used to learn about bioinformatics algorithms and store bioinformatic
 
 The Needleman-Wunsch algorithm is a classic dynamic programming algorithm used for global sequence alignment. This repository includes an implementation of the Needleman-Wunsch algorithm to align two sequences based on given scoring parameters.
 
-In the `needleman_wunch > main.py` file, the Needleman-Wunsch algorithm is called using the `run_needleman_wunch_alignment` function from the `utils.bioinformatics_utilities` module.
+In the `needleman_wunsch > main.py` file, the Needleman-Wunsch algorithm is called using the `run_needleman_wunsch_alignment` function from the `utils.bioinformatics_utilities` module.
 
 Here's how you can use it:
 
 ```python
-from utils.bioinformatics_utilities import run_needleman_wunch_alignment
+from utils.bioinformatics_utilities import run_needleman_wunsch_alignment
 
 # Define the sequences to align
 sequence_a = "GATTACAGATAGACACA"
 sequence_b = "GTCGACGCAGTAGATAG"
 
 # Call the function to perform alignment
-run_needleman_wunch_alignment(sequence_a=sequence_a,
+run_needleman_wunsch_alignment(sequence_a=sequence_a,
                               sequence_b=sequence_b,
                               match_score=1,
                               mismatch_penalty=-1,

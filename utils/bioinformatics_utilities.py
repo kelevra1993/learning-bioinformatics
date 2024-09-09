@@ -92,9 +92,9 @@ def print_dictionary(dictionary, indent):
     json.dumps(dictionary, indent=indent)
 
 
-def create_needleman_wunch_matrix(sequence_a, sequence_b):
+def create_needleman_wunsch_matrix(sequence_a, sequence_b):
     """
-    Creation of the matrix that will be used for needleman_wunch algorithm to align sequence_a and sequence_b
+    Creation of the matrix that will be used for needleman_wunsch algorithm to align sequence_a and sequence_b
     :param sequence_a: (str) first dna sequence
     :param sequence_b: (str) second dna sequence
     :return:
@@ -106,9 +106,9 @@ def create_needleman_wunch_matrix(sequence_a, sequence_b):
     return np.zeros(shape=(lines, columns))
 
 
-def initialize_needleman_wunch_matrix_and_path_dictionary(matrix, gap_penalty):
+def initialize_needleman_wunsch_matrix_and_path_dictionary(matrix, gap_penalty):
     """
-    Function that initializes the needleman_wunch algorithm
+    Function that initializes the needleman_wunsch algorithm
     :param matrix: (np.ndarray) array that will contain the score at each postion
     :param gap_penalty: (int) gap penalty to apply
     :return:
@@ -178,7 +178,7 @@ def run_algorithm(sequence_a, sequence_b, matrix, path_dictionary, match_score, 
     return matrix, path_dictionary
 
 
-def run_needleman_wunch_alignment(sequence_a, sequence_b, match_score, mismatch_penalty, gap_penalty):
+def run_needleman_wunsch_alignment(sequence_a, sequence_b, match_score, mismatch_penalty, gap_penalty):
     """
     Performs sequence alignment using the Needleman-Wunsch algorithm, which is used to find the optimal global alignment
     of two sequences. This function initializes the alignment matrix, fills it using the scoring system, and outputs
@@ -195,10 +195,10 @@ def run_needleman_wunch_alignment(sequence_a, sequence_b, match_score, mismatch_
         It utilizes `print_green` to display alignment results and `display_alignment` to format the output.
     """
 
-    alignement_matrix = create_needleman_wunch_matrix(sequence_a=sequence_a, sequence_b=sequence_b)
+    alignement_matrix = create_needleman_wunsch_matrix(sequence_a=sequence_a, sequence_b=sequence_b)
 
     # Fill in the first line and column with increasing gap scores
-    alignement_matrix, path_dictionary = initialize_needleman_wunch_matrix_and_path_dictionary(matrix=alignement_matrix,
+    alignement_matrix, path_dictionary = initialize_needleman_wunsch_matrix_and_path_dictionary(matrix=alignement_matrix,
                                                                                                gap_penalty=gap_penalty)
 
     # Go through line by line completing the matrix and getting the
