@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "learning-bioinformatics"
+version = "0.1.0"
+description = ""
+authors = ["Robert Kelevra <kelevra.robert@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+tqdm = "^4.66.5"
+matplotlib = "^3.9.2"
+logomaker = "^0.8"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
