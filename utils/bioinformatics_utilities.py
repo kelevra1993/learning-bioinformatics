@@ -83,6 +83,12 @@ def print_bold(output, add_separators=False):
 
 
 def print_dictionary(dictionary, indent):
+    """
+    Function that prints out a dictionary
+    :param dictionary: (dict) dictionary of interest
+    :param indent: (bool) whether or not to indent the output
+    :return:
+    """
     json.dumps(dictionary, indent=indent)
 
 
@@ -102,9 +108,9 @@ def create_needleman_wunch_matrix(sequence_a, sequence_b):
 
 def initialize_needleman_wunch_matrix_and_path_dictionary(matrix, gap_penalty):
     """
-    # todo add documentation
-    :param matrix:
-    :param gap_penalty:
+    Function that initializes the needleman_wunch algorithm
+    :param matrix: (np.ndarray) array that will contain the score at each postion
+    :param gap_penalty: (int) gap penalty to apply
     :return:
     """
 
@@ -128,15 +134,20 @@ def initialize_needleman_wunch_matrix_and_path_dictionary(matrix, gap_penalty):
 
 def run_algorithm(sequence_a, sequence_b, matrix, path_dictionary, match_score, mismatch_penalty, gap_penalty):
     """
-    # Todo Add documentation
-    :param sequence_a:
-    :param sequence_b:
-    :param matrix:
-    :param path_dictionary:
-    :param match_score:
-    :param mismatch_penalty:
-    :param gap_penalty:
-    :return:
+    Performs a dynamic programming algorithm, typically used for sequence alignment (such as Needleman-Wunsch),
+    to populate a score matrix and record the optimal path for aligning two sequences.
+
+    :param sequence_a: The first sequence to align (string or list of nucleotides/amino acids).
+    :param sequence_b: The second sequence to align (string or list of nucleotides/amino acids).
+    :param matrix: A 2D matrix (NumPy array) where alignment scores will be calculated and stored.
+    :param path_dictionary: A dictionary to track the optimal path for sequence alignment based on score directions
+                            (diagonal, up, left).
+    :param match_score: The score for a match between characters in the sequences.
+    :param mismatch_penalty: The penalty for a mismatch between characters in the sequences.
+    :param gap_penalty: The penalty for introducing a gap in the alignment.
+
+    :return: A tuple containing the updated score matrix and path dictionary. The matrix is filled with alignment scores,
+             while the path dictionary indicates the direction of optimal moves for sequence alignment.
     """
 
     (lines, columns) = matrix.shape
@@ -169,16 +180,20 @@ def run_algorithm(sequence_a, sequence_b, matrix, path_dictionary, match_score, 
 
 def run_needleman_wunch_alignment(sequence_a, sequence_b, match_score, mismatch_penalty, gap_penalty):
     """
-    # todo add documentation
-    :param sequence_a:
-    :param sequence_b:
-    :param match_score:
-    :param mismatch_penalty:
-    :param gap_penalty:
-    :return:
-    """
+    Performs sequence alignment using the Needleman-Wunsch algorithm, which is used to find the optimal global alignment
+    of two sequences. This function initializes the alignment matrix, fills it using the scoring system, and outputs
+    the optimal alignments.
 
-    # Todo we might want to check that the gap_penalty is negative.
+    :param sequence_a: The first sequence to align (string or list of nucleotides/amino acids).
+    :param sequence_b: The second sequence to align (string or list of nucleotides/amino acids).
+    :param match_score: The score assigned for matching characters between the sequences.
+    :param mismatch_penalty: The penalty applied for mismatched characters between the sequences.
+    :param gap_penalty: The penalty for introducing gaps in the alignment.
+
+    :return: None
+        The function does not return values but prints the optimal alignments to the console.
+        It utilizes `print_green` to display alignment results and `display_alignment` to format the output.
+    """
 
     alignement_matrix = create_needleman_wunch_matrix(sequence_a=sequence_a, sequence_b=sequence_b)
 
@@ -201,6 +216,18 @@ def run_needleman_wunch_alignment(sequence_a, sequence_b, match_score, mismatch_
 
 
 def display_alignment(data):
+    """
+    Displays the alignment of two sequences by printing them side-by-side with a middle line
+    indicating matches, gaps, and mismatches.
+
+    :param data: A dictionary containing:
+        - 'sequence_a': The first sequence (string) to display.
+        - 'sequence_b': The second sequence (string) to display.
+
+    :return: None
+        This function prints the aligned sequences and their corresponding alignment line to the console.
+    """
+
     sequence_a = data['sequence_a']
     sequence_b = data['sequence_b']
 
@@ -225,6 +252,23 @@ def display_alignment(data):
 
 
 def return_optimal_alignments(sequence_a, sequence_b, alignement_matrix, path_dictionary):
+    """
+    Computes and returns all optimal alignments of two sequences based on the alignment matrix and path dictionary.
+
+    This function backtracks through the alignment matrix to find all possible optimal alignments of the sequences,
+    starting from the bottom-right corner of the matrix and using the path dictionary to follow the optimal paths.
+
+    :param sequence_a: The first sequence (string) to align.
+    :param sequence_b: The second sequence (string) to align.
+    :param alignement_matrix: A 2D matrix (NumPy array) with alignment scores.
+    :param path_dictionary: A dictionary containing the optimal path directions (diagonal, up, left) for each matrix cell.
+
+    :return: A list of dictionaries, each representing an optimal alignment. Each dictionary contains:
+        - 'sequence_a': The aligned version of the first sequence.
+        - 'sequence_b': The aligned version of the second sequence.
+        - 'current_index': The current index in the alignment matrix.
+    """
+
     (lines, columns) = alignement_matrix.shape
 
     # We start of at the bottom right of the matrix
@@ -289,10 +333,14 @@ def return_optimal_alignments(sequence_a, sequence_b, alignement_matrix, path_di
 
 def get_max_keys_and_value(data_dictionary):
     """
-    # Todo document function
-    :param data_dictionary:
-    :return:
+    Finds the keys in a dictionary that have the maximum value and returns them along with the maximum value.
+
+    :param data_dictionary: A dictionary where the values are compared to find the maximum. The keys are associated with these values.
+    :return: A tuple containing:
+        - A list of keys that have the maximum value.
+        - The maximum value found in the dictionary.
     """
+
     # Step 1: Find the maximum value
     max_value = max(data_dictionary.values())
 
