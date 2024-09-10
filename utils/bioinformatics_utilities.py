@@ -94,6 +94,7 @@ def print_dictionary(dictionary, indent):
 
 def create_needleman_wunsch_matrix(sequence_a, sequence_b):
     """
+    Global alignement
     Creation of the matrix that will be used for needleman_wunsch algorithm to align sequence_a and sequence_b
     :param sequence_a: (str) first dna sequence
     :param sequence_b: (str) second dna sequence
@@ -198,21 +199,134 @@ def run_needleman_wunsch_alignment(sequence_a, sequence_b, match_score, mismatch
     alignement_matrix = create_needleman_wunsch_matrix(sequence_a=sequence_a, sequence_b=sequence_b)
 
     # Fill in the first line and column with increasing gap scores
-    alignement_matrix, path_dictionary = initialize_needleman_wunsch_matrix_and_path_dictionary(matrix=alignement_matrix,
-                                                                                               gap_penalty=gap_penalty)
+    alignement_matrix, path_dictionary = initialize_needleman_wunsch_matrix_and_path_dictionary(
+        matrix=alignement_matrix,
+        gap_penalty=gap_penalty)
 
-    # Go through line by line completing the matrix and getting the
+    # Go through line by line completing the matrix and getting the alignement matrix and backtrack path dictionary
     alignement_matrix, path_dictionary = run_algorithm(sequence_a, sequence_b, matrix=alignement_matrix,
                                                        path_dictionary=path_dictionary,
                                                        match_score=match_score, mismatch_penalty=mismatch_penalty,
                                                        gap_penalty=gap_penalty)
 
     optimal_alignements = return_optimal_alignments(sequence_a, sequence_b, alignement_matrix, path_dictionary)
-
+    print(alignement_matrix)
     for index, optimal_alignement in enumerate(optimal_alignements):
         print_green(f"Alignement Number : {index + 1}", add_separators=True)
         # Display the alignment
         display_alignment(optimal_alignement)
+
+
+def create_smith_waterman_matrix(sequence_a, sequence_b):
+    """
+    Local alignement
+    Creation of the matrix that will be used for smith_waterman algorithm to align sequence_a and sequence_b
+    :param sequence_a: (str) first dna sequence
+    :param sequence_b: (str) second dna sequence
+    :return:
+    """
+
+    lines = len(sequence_a) + 1
+    columns = len(sequence_b) + 1
+
+    return np.zeros(shape=(lines, columns))
+
+
+def initialize_smith_waterman_matrix(matrix, gap_penalty):
+    """
+    Function that initializes the smith_waterman algorithm
+    :param matrix: (np.ndarray) array that will contain the score at each postion
+    :param gap_penalty: (int) gap penalty to apply
+    :return:
+    """
+
+    (lines, columns) = matrix.shape
+
+    # Dealing with lines
+    for i in range(lines):
+        matrix[i][0] = np.max([0, i * gap_penalty])
+
+    # Dealing with columns
+    for j in range(columns):
+        matrix[0][j] = np.max([0, j * gap_penalty])
+
+    return matrix
+
+
+def run_smith_waterman_algorithm(sequence_a, sequence_b, matrix, match_score, mismatch_penalty, gap_penalty):
+    """
+    Performs a dynamic programming smith waterman algorithm to populate a score matrix
+     and record the optimal path for aligning two sequences.
+
+    :param sequence_a: The first sequence to align (string or list of nucleotides/amino acids).
+    :param sequence_b: The second sequence to align (string or list of nucleotides/amino acids).
+    :param matrix: A 2D matrix (NumPy array) where alignment scores will be calculated and stored.
+    :param match_score: The score for a match between characters in the sequences.
+    :param mismatch_penalty: The penalty for a mismatch between characters in the sequences.
+    :param gap_penalty: The penalty for introducing a gap in the alignment.
+
+    :return: A tuple containing the updated score matrix and path dictionary. The matrix is filled with alignment scores,
+             while the path dictionary indicates the direction of optimal moves for sequence alignment.
+    """
+
+    (lines, columns) = matrix.shape
+
+    # Go through lines, from index 1 to the last index.
+    for i in range(1, lines):
+        nucleotide_a = sequence_a[i - 1]
+
+        # Go through columns from the first index to the last one
+        for j in range(1, columns):
+            # Get previous proximal values
+            diagonal_value = matrix[i - 1][j - 1]
+            up_value = matrix[i - 1][j]
+            left_value = matrix[i][j - 1]
+
+            nucleotide_b = sequence_b[j - 1]
+
+            # Get diagonal score
+            diagonal_score = diagonal_value + match_score if nucleotide_a == nucleotide_b else diagonal_value + mismatch_penalty
+
+            scores = {"diagonal": diagonal_score,
+                      "up": up_value + gap_penalty,
+                      "left": left_value + gap_penalty,
+                      "nul": 0
+                      }
+
+            _, matrix[i][j] = get_max_keys_and_value(scores)
+
+    return matrix,
+
+
+def run_smith_waterman_alignment(sequence_a, sequence_b, match_score, mismatch_penalty, gap_penalty):
+    """
+    Performs sequence alignment using the Smith-Waterman algorithm, which is used to find the optimal local alignment
+    of two sequences. This function initializes the alignment matrix, fills it using the scoring system, and outputs
+    the optimal alignments.
+
+    :param sequence_a: The first sequence to align (string or list of nucleotides/amino acids).
+    :param sequence_b: The second sequence to align (string or list of nucleotides/amino acids).
+    :param match_score: The score assigned for matching characters between the sequences.
+    :param mismatch_penalty: The penalty applied for mismatched characters between the sequences.
+    :param gap_penalty: The penalty for introducing gaps in the alignment.
+
+    :return: None
+    """
+
+    alignement_matrix = create_smith_waterman_matrix(sequence_a=sequence_a, sequence_b=sequence_b)
+
+    # Fill in the first line and column with increasing gap scores
+    alignement_matrix = initialize_smith_waterman_matrix(
+        matrix=alignement_matrix,
+        gap_penalty=gap_penalty)
+
+    # Go through line by line completing the matrix and getting the alignement matrix
+    alignement_matrix = run_smith_waterman_algorithm(sequence_a, sequence_b, matrix=alignement_matrix,
+                                                     match_score=match_score,
+                                                     mismatch_penalty=mismatch_penalty,
+                                                     gap_penalty=gap_penalty)
+    print_green("Smith WatterMan Alignement")
+    print(alignement_matrix)
 
 
 def display_alignment(data):
