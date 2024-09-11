@@ -218,7 +218,7 @@ def run_needleman_wunsch_alignment(sequence_a, sequence_b, match_score, mismatch
     print_green("Needleman Wunsch Alignement")
     print(create_dataframe_with_string(sequence_a, sequence_b, alignement_matrix))
     for index, optimal_alignement in enumerate(optimal_alignements):
-        print_green(f"Alignement Number : {index + 1}", add_separators=True)
+        print_green(f"Global Alignement Number : {index + 1}", add_separators=True)
         # Display the alignment
         display_alignment(optimal_alignement)
 
@@ -502,67 +502,76 @@ def return_smith_waterman_optimal_alignments(sequence_a, sequence_b, alignement_
         - 'current_index': The current index in the alignment matrix.
     """
 
-    # First get the highest value in the matrix.
-    row, column = np.unravel_index(np.argmax(alignement_matrix), alignement_matrix.shape)
+    # First get the indices of the highest values in the matrix.
+    x_positions, y_positions = np.where(alignement_matrix == np.max(alignement_matrix))
 
-    # We start of at the bottom right of the matrix
-    starting_position = (row, column)
-    current_alignment = {
-        "sequence_a": "",
-        "sequence_b": "",
-        "current_index": starting_position
-    }
+    optimal_aligned_sequences_dictionary = {}
 
-    optimal_aligned_sequences = [current_alignment]
+    for index, (row, column) in enumerate(zip(x_positions, y_positions)):
 
-    # We iterate through the maximum number possible alignement of iterations which is always row+column,
-    for _ in range(row + column):
+        # We start of at the bottom right of the matrix
+        starting_position = (row, column)
+        current_alignment = {
+            "sequence_a": "",
+            "sequence_b": "",
+            "current_index": starting_position
+        }
 
-        buffer_optimal_aligned_sequences = []
+        optimal_aligned_sequences = [current_alignment]
 
-        for optimal_aligned_sequence in optimal_aligned_sequences:
-            matrix_indexes = optimal_aligned_sequence["current_index"]
-            sequence_indexes = (optimal_aligned_sequence["current_index"][0] - 1,
-                                optimal_aligned_sequence["current_index"][1] - 1)
+        # We iterate through the maximum number possible alignement of iterations which is always row+column,
+        for _ in range(row + column):
 
-            current_cell_backtracks = path_dictionary[f"{matrix_indexes[0]}-{matrix_indexes[1]}"]
+            buffer_optimal_aligned_sequences = []
 
-            # we have reached the top for the current aligned sequence
-            if not current_cell_backtracks or alignement_matrix[matrix_indexes[0]][matrix_indexes[1]] == 0:
-                buffer_optimal_aligned_sequences.append(optimal_aligned_sequence)
-                continue
+            for optimal_aligned_sequence in optimal_aligned_sequences:
+                matrix_indexes = optimal_aligned_sequence["current_index"]
+                sequence_indexes = (optimal_aligned_sequence["current_index"][0] - 1,
+                                    optimal_aligned_sequence["current_index"][1] - 1)
 
-            # Keep all of the positions
-            for cell_backtrack in current_cell_backtracks:
-                current_backtrack_sequence = {}
+                current_cell_backtracks = path_dictionary[f"{matrix_indexes[0]}-{matrix_indexes[1]}"]
 
-                if cell_backtrack not in ["up", "diagonal", "left"]:
-                    print_red("Problematic : We should Not Have Gotten To This Point !!!")
+                # we have reached the top for the current aligned sequence
+                if not current_cell_backtracks or alignement_matrix[matrix_indexes[0]][matrix_indexes[1]] == 0:
+                    buffer_optimal_aligned_sequences.append(optimal_aligned_sequence)
+                    continue
 
-                if cell_backtrack == "up":
-                    current_backtrack_sequence = {
-                        "sequence_a": sequence_a[sequence_indexes[0]] + optimal_aligned_sequence["sequence_a"],
-                        "sequence_b": "-" + optimal_aligned_sequence["sequence_b"],
-                        "current_index": (matrix_indexes[0] - 1, matrix_indexes[1])
-                    }
+                # Keep all of the positions
+                for cell_backtrack in current_cell_backtracks:
+                    current_backtrack_sequence = {}
 
-                if cell_backtrack == "left":
-                    current_backtrack_sequence = {
-                        "sequence_a": "-" + optimal_aligned_sequence["sequence_a"],
-                        "sequence_b": sequence_b[sequence_indexes[1]] + optimal_aligned_sequence["sequence_b"],
-                        "current_index": (matrix_indexes[0], matrix_indexes[1] - 1)
-                    }
+                    if cell_backtrack not in ["up", "diagonal", "left"]:
+                        print_red("Problematic : We should Not Have Gotten To This Point !!!")
 
-                if cell_backtrack == "diagonal":
-                    current_backtrack_sequence = {
-                        "sequence_a": sequence_a[sequence_indexes[0]] + optimal_aligned_sequence["sequence_a"],
-                        "sequence_b": sequence_b[sequence_indexes[1]] + optimal_aligned_sequence["sequence_b"],
-                        "current_index": (matrix_indexes[0] - 1, matrix_indexes[1] - 1)
-                    }
+                    if cell_backtrack == "up":
+                        current_backtrack_sequence = {
+                            "sequence_a": sequence_a[sequence_indexes[0]] + optimal_aligned_sequence["sequence_a"],
+                            "sequence_b": "-" + optimal_aligned_sequence["sequence_b"],
+                            "current_index": (matrix_indexes[0] - 1, matrix_indexes[1])
+                        }
 
-                # Add it to the buffer_optimal_aligned_sequences
-                buffer_optimal_aligned_sequences.append(current_backtrack_sequence)
-        optimal_aligned_sequences = buffer_optimal_aligned_sequences
+                    if cell_backtrack == "left":
+                        current_backtrack_sequence = {
+                            "sequence_a": "-" + optimal_aligned_sequence["sequence_a"],
+                            "sequence_b": sequence_b[sequence_indexes[1]] + optimal_aligned_sequence["sequence_b"],
+                            "current_index": (matrix_indexes[0], matrix_indexes[1] - 1)
+                        }
+
+                    if cell_backtrack == "diagonal":
+                        current_backtrack_sequence = {
+                            "sequence_a": sequence_a[sequence_indexes[0]] + optimal_aligned_sequence["sequence_a"],
+                            "sequence_b": sequence_b[sequence_indexes[1]] + optimal_aligned_sequence["sequence_b"],
+                            "current_index": (matrix_indexes[0] - 1, matrix_indexes[1] - 1)
+                        }
+
+                    # Add it to the buffer_optimal_aligned_sequences
+                    buffer_optimal_aligned_sequences.append(current_backtrack_sequence)
+            optimal_aligned_sequences = buffer_optimal_aligned_sequences
+        optimal_aligned_sequences_dictionary[str(index)] = optimal_aligned_sequences
+
+    optimal_aligned_sequences = []
+    for k, v in optimal_aligned_sequences_dictionary.items():
+        optimal_aligned_sequences.extend(v)
 
     return optimal_aligned_sequences
 
