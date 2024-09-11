@@ -4,7 +4,12 @@ This file contains functions that are used throughout the repository to learn bi
 import time
 import json
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
+
+# Set pandas option to display more columns
+pd.set_option('display.max_columns', None)  # Display all columns
+pd.set_option('display.width', 1000)  # Display all columns
 
 
 def print_blue(output, add_separators=False):
@@ -210,7 +215,8 @@ def run_needleman_wunsch_alignment(sequence_a, sequence_b, match_score, mismatch
                                                        gap_penalty=gap_penalty)
 
     optimal_alignements = return_optimal_alignments(sequence_a, sequence_b, alignement_matrix, path_dictionary)
-    print(alignement_matrix)
+    print_green("Needleman Wunsch Alignement")
+    print(create_dataframe_with_string(sequence_a, sequence_b, alignement_matrix))
     for index, optimal_alignement in enumerate(optimal_alignements):
         print_green(f"Alignement Number : {index + 1}", add_separators=True)
         # Display the alignment
@@ -295,7 +301,7 @@ def run_smith_waterman_algorithm(sequence_a, sequence_b, matrix, match_score, mi
 
             _, matrix[i][j] = get_max_keys_and_value(scores)
 
-    return matrix,
+    return matrix
 
 
 def run_smith_waterman_alignment(sequence_a, sequence_b, match_score, mismatch_penalty, gap_penalty):
@@ -326,7 +332,7 @@ def run_smith_waterman_alignment(sequence_a, sequence_b, match_score, mismatch_p
                                                      mismatch_penalty=mismatch_penalty,
                                                      gap_penalty=gap_penalty)
     print_green("Smith WatterMan Alignement")
-    print(alignement_matrix)
+    print(create_dataframe_with_string(sequence_a, sequence_b, alignement_matrix))
 
 
 def display_alignment(data):
@@ -363,6 +369,23 @@ def display_alignment(data):
     print(f"Sequence A: {sequence_a}")
     print(f"            {aligned_mid}")
     print(f"Sequence B: {sequence_b}")
+
+
+def create_dataframe_with_string(string_a, string_b, matrix):
+    """
+    TODO Add docstring
+    :param string_a:
+    :param string_b:
+    :param matrix:
+    :return:
+    """
+
+    # Convert the matrix to a DataFrame
+    dataframe = pd.DataFrame(matrix)
+    dataframe.index = [" "] + [e for e in string_a]
+    dataframe.columns = [" "] + [e for e in string_b]
+
+    return dataframe
 
 
 def return_optimal_alignments(sequence_a, sequence_b, alignement_matrix, path_dictionary):
