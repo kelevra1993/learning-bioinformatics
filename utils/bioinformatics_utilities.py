@@ -247,19 +247,23 @@ def initialize_smith_waterman_matrix(matrix, gap_penalty):
     """
 
     (lines, columns) = matrix.shape
+    path_dictionary = {}
 
     # Dealing with lines
     for i in range(lines):
         matrix[i][0] = np.max([0, i * gap_penalty])
+        path_dictionary[f"{i}-0"] = None
 
     # Dealing with columns
     for j in range(columns):
         matrix[0][j] = np.max([0, j * gap_penalty])
+        path_dictionary[f"0-{j}"] = None
 
-    return matrix
+    return matrix, path_dictionary
 
 
-def run_smith_waterman_algorithm(sequence_a, sequence_b, matrix, match_score, mismatch_penalty, gap_penalty):
+def run_smith_waterman_algorithm(sequence_a, sequence_b, matrix, path_dictionary, match_score, mismatch_penalty,
+                                 gap_penalty):
     """
     Performs a dynamic programming smith waterman algorithm to populate a score matrix
      and record the optimal path for aligning two sequences.
@@ -267,6 +271,8 @@ def run_smith_waterman_algorithm(sequence_a, sequence_b, matrix, match_score, mi
     :param sequence_a: The first sequence to align (string or list of nucleotides/amino acids).
     :param sequence_b: The second sequence to align (string or list of nucleotides/amino acids).
     :param matrix: A 2D matrix (NumPy array) where alignment scores will be calculated and stored.
+    :param path_dictionary: A dictionary to track the optimal path for sequence alignment based on score directions
+                            (diagonal, up, left).
     :param match_score: The score for a match between characters in the sequences.
     :param mismatch_penalty: The penalty for a mismatch between characters in the sequences.
     :param gap_penalty: The penalty for introducing a gap in the alignment.
@@ -299,9 +305,9 @@ def run_smith_waterman_algorithm(sequence_a, sequence_b, matrix, match_score, mi
                       "nul": 0
                       }
 
-            _, matrix[i][j] = get_max_keys_and_value(scores)
+            path_dictionary[f"{i}-{j}"], matrix[i][j] = get_max_keys_and_value(scores)
 
-    return matrix
+    return matrix, path_dictionary
 
 
 def run_smith_waterman_alignment(sequence_a, sequence_b, match_score, mismatch_penalty, gap_penalty):
@@ -322,17 +328,26 @@ def run_smith_waterman_alignment(sequence_a, sequence_b, match_score, mismatch_p
     alignement_matrix = create_smith_waterman_matrix(sequence_a=sequence_a, sequence_b=sequence_b)
 
     # Fill in the first line and column with increasing gap scores
-    alignement_matrix = initialize_smith_waterman_matrix(
+    alignement_matrix, path_dictionary = initialize_smith_waterman_matrix(
         matrix=alignement_matrix,
         gap_penalty=gap_penalty)
 
     # Go through line by line completing the matrix and getting the alignement matrix
-    alignement_matrix = run_smith_waterman_algorithm(sequence_a, sequence_b, matrix=alignement_matrix,
-                                                     match_score=match_score,
-                                                     mismatch_penalty=mismatch_penalty,
-                                                     gap_penalty=gap_penalty)
-    print_green("Smith WatterMan Alignement")
+    alignement_matrix, path_dictionary = run_smith_waterman_algorithm(sequence_a, sequence_b, matrix=alignement_matrix,
+                                                                      match_score=match_score,
+                                                                      path_dictionary=path_dictionary,
+                                                                      mismatch_penalty=mismatch_penalty,
+                                                                      gap_penalty=gap_penalty)
+    print_green("Smith Watterman Alignement")
     print(create_dataframe_with_string(sequence_a, sequence_b, alignement_matrix))
+    optimal_local_alignements = return_smith_waterman_optimal_alignments(sequence_a, sequence_b,
+                                                                         alignement_matrix=alignement_matrix,
+                                                                         path_dictionary=path_dictionary)
+
+    for index, optimal_local_alignements in enumerate(optimal_local_alignements):
+        print_green(f"Local Alignement Number : {index + 1}", add_separators=True)
+        # Display the local alignment
+        display_alignment(optimal_local_alignements)
 
 
 def display_alignment(data):
@@ -439,6 +454,90 @@ def return_optimal_alignments(sequence_a, sequence_b, alignement_matrix, path_di
             # Keep all of the positions
             for cell_backtrack in current_cell_backtracks:
                 current_backtrack_sequence = {}
+
+                if cell_backtrack == "up":
+                    current_backtrack_sequence = {
+                        "sequence_a": sequence_a[sequence_indexes[0]] + optimal_aligned_sequence["sequence_a"],
+                        "sequence_b": "-" + optimal_aligned_sequence["sequence_b"],
+                        "current_index": (matrix_indexes[0] - 1, matrix_indexes[1])
+                    }
+
+                if cell_backtrack == "left":
+                    current_backtrack_sequence = {
+                        "sequence_a": "-" + optimal_aligned_sequence["sequence_a"],
+                        "sequence_b": sequence_b[sequence_indexes[1]] + optimal_aligned_sequence["sequence_b"],
+                        "current_index": (matrix_indexes[0], matrix_indexes[1] - 1)
+                    }
+
+                if cell_backtrack == "diagonal":
+                    current_backtrack_sequence = {
+                        "sequence_a": sequence_a[sequence_indexes[0]] + optimal_aligned_sequence["sequence_a"],
+                        "sequence_b": sequence_b[sequence_indexes[1]] + optimal_aligned_sequence["sequence_b"],
+                        "current_index": (matrix_indexes[0] - 1, matrix_indexes[1] - 1)
+                    }
+
+                # Add it to the buffer_optimal_aligned_sequences
+                buffer_optimal_aligned_sequences.append(current_backtrack_sequence)
+        optimal_aligned_sequences = buffer_optimal_aligned_sequences
+
+    return optimal_aligned_sequences
+
+
+def return_smith_waterman_optimal_alignments(sequence_a, sequence_b, alignement_matrix, path_dictionary):
+    """
+    Computes and returns all optimal alignments of two sequences based on the alignment matrix and path dictionary.
+
+    This function backtracks through the alignment matrix to find all possible optimal local alignments of the sequences,
+    starting from the largest value of the matrix and using the path dictionary to follow the optimal paths and stopping
+    at 0.
+
+    :param sequence_a: The first sequence (string) to align.
+    :param sequence_b: The second sequence (string) to align.
+    :param alignement_matrix: A 2D matrix (NumPy array) with alignment scores.
+    :param path_dictionary: A dictionary containing the optimal path directions (diagonal, up, left) for each matrix cell.
+
+    :return: A list of dictionaries, each representing an optimal alignment. Each dictionary contains:
+        - 'sequence_a': The aligned version of the first sequence.
+        - 'sequence_b': The aligned version of the second sequence.
+        - 'current_index': The current index in the alignment matrix.
+    """
+
+    # First get the highest value in the matrix.
+    row, column = np.unravel_index(np.argmax(alignement_matrix), alignement_matrix.shape)
+
+    # We start of at the bottom right of the matrix
+    starting_position = (row, column)
+    current_alignment = {
+        "sequence_a": "",
+        "sequence_b": "",
+        "current_index": starting_position
+    }
+
+    optimal_aligned_sequences = [current_alignment]
+
+    # We iterate through the maximum number possible alignement of iterations which is always row+column,
+    for _ in range(row + column):
+
+        buffer_optimal_aligned_sequences = []
+
+        for optimal_aligned_sequence in optimal_aligned_sequences:
+            matrix_indexes = optimal_aligned_sequence["current_index"]
+            sequence_indexes = (optimal_aligned_sequence["current_index"][0] - 1,
+                                optimal_aligned_sequence["current_index"][1] - 1)
+
+            current_cell_backtracks = path_dictionary[f"{matrix_indexes[0]}-{matrix_indexes[1]}"]
+
+            # we have reached the top for the current aligned sequence
+            if not current_cell_backtracks or alignement_matrix[matrix_indexes[0]][matrix_indexes[1]] == 0:
+                buffer_optimal_aligned_sequences.append(optimal_aligned_sequence)
+                continue
+
+            # Keep all of the positions
+            for cell_backtrack in current_cell_backtracks:
+                current_backtrack_sequence = {}
+
+                if cell_backtrack not in ["up", "diagonal", "left"]:
+                    print_red("Problematic : We should Not Have Gotten To This Point !!!")
 
                 if cell_backtrack == "up":
                     current_backtrack_sequence = {
